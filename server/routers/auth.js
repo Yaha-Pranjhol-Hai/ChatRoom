@@ -37,9 +37,15 @@ router.post('/createuser', [
                 id: user.id
             }
         }
+
+        const options = {
+            httpOnly: true,
+            secure: false,
+        };
+
         const authtoken = jwt.sign(data, process.env.JWT_SECRET);
         success = true;
-        res.json({success, authtoken})
+        res.cookie("authToken", authtoken, options).json({success})
 
     } catch (error) {
         console.error(error.message);
@@ -78,9 +84,14 @@ router.post('/login', [
             }
         }
 
+        const options = {
+            httpOnly: true,
+            secure: false,
+        };
+
         const authtoken = jwt.sign(data, process.env.JWT_SECRET);
         success = true,
-        res.json({success, authtoken})
+        res.cookie("authtoken", authtoken , options).json({success})
     } catch (error) {
         console.log(error.message);
         res.status(500).send("Internal server error")

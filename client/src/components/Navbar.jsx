@@ -1,8 +1,8 @@
-import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Form from 'react-bootstrap/Form';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
+import { Link } from "react-router-dom";
 
 function NavBar() {
   return (
@@ -18,13 +18,8 @@ function NavBar() {
           >
           </Nav>
           <Form className="d-flex">
-            <Form.Control
-              type="search"
-              placeholder="Search"
-              className="me-2"
-              aria-label="Search"
-            />
-            <Button variant="outline-success">Search</Button>
+            <Link className="btn btn-primary mx-2" to="/login" role="button">Login</Link>
+            <Link className="btn btn-primary mx-2" to="/Signup" role="button">Signup</Link>
           </Form>
         </Navbar.Collapse>
       </Container>

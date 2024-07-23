@@ -1,22 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import socketIOClient from 'socket.io-client';
-import axios from 'axios';
-import Button from 'react-bootstrap/Button';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './Home';
+import Login from  './pages/Login'
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const App = () => {
   return (
-    <>
-      <Router>
-        <Navbar />
-        <Routes>
-          <Route exact path="/" element={<Home />} />
-        </Routes>
-      </Router>
-      <Button variant="primary">Button as link</Button>
-</>)}
+    <Router>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </Router>
+  );
+}
 
 export default App;
