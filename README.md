@@ -1,1 +1,1 @@
-# Frontend-NextJS
+# Chat Application
