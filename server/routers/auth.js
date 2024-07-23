@@ -1,4 +1,3 @@
-import express from "express";
 import User from '../models/user.model.js';
 import { Router } from "express";
 import bcrypt from 'bcrypt';
