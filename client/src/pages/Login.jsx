@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function Login() {
+    // Initialize the state for email and password as empty strings
     const [credentials, setCredentials] = useState({ email: "", password: "" });
     let navigate = useNavigate();
 
@@ -33,13 +34,13 @@ function Login() {
     }
 
     return (
-        <div>
+        <div style={{ width: "50%", margin: "auto", padding: "1rem"}}>
             <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                     <label htmlFor="email" className="form-label">Email address</label>
                     <input
                         type="email"
-                        value={credentials.email}
+                        value={credentials.email} // The initial value is an empty string
                         onChange={onChange}
                         className="form-control"
                         id="email"
@@ -52,11 +53,11 @@ function Login() {
                     <label htmlFor="password" className="form-label">Password</label>
                     <input
                         type="password"
-                        value={credentials.password}
+                        value={credentials.password} // The initial value is an empty string
                         onChange={onChange}
                         className="form-control"
                         name="password"
-                        id="password"
+                        placeholder=""
                     />
                 </div>
                 <button type="submit" className="btn btn-primary">Submit</button>

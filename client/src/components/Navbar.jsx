@@ -19,7 +19,7 @@ function NavBar() {
           </Nav>
           <Form className="d-flex">
             <Link className="btn btn-primary mx-2" to="/login" role="button">Login</Link>
-            <Link className="btn btn-primary mx-2" to="/Signup" role="button">Signup</Link>
+            <Link className="btn btn-primary mx-2" to="/signup" role="button">Signup</Link>
           </Form>
         </Navbar.Collapse>
       </Container>
