@@ -12,20 +12,18 @@ const Signup = () => {
         try {
             const response = await axios.post("http://localhost:3001/api/createuser", {
                 name, email, password
-            });
-            const json = response.data; // The response is already a JSON object
-            console.log(json);
+            },
+            { withCredentials: true }
+        );
+            const json = response.data;
             if (json.success) {
-                // Save the auth token and redirect
-                localStorage.setItem('token', json.authtoken);
                 navigate("/");
-                console.log("Account Created Successfully", "success");
+                console.log("Account Created Successfully");
             } else {
-                console.log("Invalid credentials", "danger");
+                console.log("Invalid credentials");
             }
         } catch (error) {
             console.error("Error during sign up:", error);
-            console.log("An error occurred during sign up");
         }
     };
 
