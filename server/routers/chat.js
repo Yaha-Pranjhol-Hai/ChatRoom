@@ -1,37 +1,51 @@
 import express from "express";
 import Room from '../models/room.model.js';
 import fetchuser from "../middleware/fetchuser.js";
+import Message from "../models/message.model.js";
 
 const router = express.Router();
 
-// Create a Room
-router.post('/createroom', fetchuser, async (req,res) => {
+// Route to send a message to a specific room.
+router.post('/send', fetchuser, async (req, res) => {
     try {
-        const { name, invitedUsers } = req.body;
-        const newRoom = new Room({
-            name,
-            createdBy: req.user.id,
-            invitedUsers
-        })
+        const { message, room } = req.body;
+        const roomExists = await Room.findById(room);
+        
+        if(!roomExists || !roomExists.invitedUsers.includes(req.user.id)) {
+            return res.status(400).json({ success: false, error: "You are not invited to this room."})
+        }
 
-        const savedRoom = await newRoom.save();
-        res.json({ success: true, room: savedRoom });
+        const newMessage = new Message({
+            user: req.user.id,
+            message,
+            room
+        });
+
+        const savedMessage = await newMessage.save();
+        res.json({ success: true, message: savedMessage});
 
     } catch (error) {
         console.error(error.message);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send("Internal server Error.");
     }
 })
 
-// Route to fetch rooms where the user is invited.
-router.get('/', fetchuser, async (req, res) => {
+// Route to fetch messages of a specific room
+router.get('/room/:roomId', fetchuser, async (req,res) => {
     try {
-        const rooms = await Room.find({ invitedUsers: req.user.id }).populate('createdBy', 'name email');
-        res.json({ success: true, rooms});
-        
+        const { roomId } = req.params;
+        const roomExists = await Room.findById(roomId);
+
+        if(!roomExists || !roomExists.invitedUsers.includes(req.user.id)) {
+            return res.status(400).json({ success: false, error: "You are not invited to this room."})
+        }
+
+        const messages = await Message.find({ room: roomId }).populate('user', 'name email');
+        res.json({ success: true, messages });
+
     } catch (error) {
         console.error(error.message);
-        res.status(500).send("Internal Server Error.");
+        res.status(500).send("Internal server Error");
     }
 })
 

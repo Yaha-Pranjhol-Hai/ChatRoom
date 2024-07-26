@@ -16,6 +16,7 @@ dotenv.config({
 
 const app = express();
 const server = http.createServer(app);
+app.use(express.json());
 app.use(cookieParser());
 
 const io = new Server(server, {
