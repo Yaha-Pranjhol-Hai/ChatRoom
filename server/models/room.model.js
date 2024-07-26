@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import User from './user.model.js';
 
 const RoomSchema = new mongoose.Schema({
     name: {
@@ -10,9 +11,13 @@ const RoomSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
+    invitedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }]
 },
 { timestamps: true }
-)
+);
 
 const Room = mongoose.model("Room", RoomSchema);
 
