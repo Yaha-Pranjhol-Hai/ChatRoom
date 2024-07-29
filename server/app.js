@@ -51,8 +51,9 @@ app.use(
 io.on('connection', (socket) => {
   console.log('A user connected', socket.user.id);
 
-  socket.on('room:join', async (data) => {
-    console.log(data);
+  socket.on('joinroom', ({ roomId }) => {
+    socket.join(roomId);
+    console.log(`${socket.user.id} joined room ${roomId}`);
   })
 
   socket.on('fetchChats', async (callback) => {
@@ -64,21 +65,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('sendMessage', async (message, callback) => {
+  socket.on('sendMessage', async ({ message, roomId }) => {
     try {
-      const chat = new Message( {
+      const newMessage = new Message({
         user: socket.user.id,
-        message
+        message,
+        room: roomId
       });
-      await chat.save();
-
-      io.emit('newMessage', chat);
-      callback({ success: true, chat});
-
+      const savedMessage = await newMessage.save();
+      io.to(roomId).emit('newMessage', savedMessage);
     } catch (error) {
-      callback({ success: false, error: error.massage})
+      console.error('Error sending message:', error);
+      socket.emit('sendMessage', { success: false, error: error.message });
     }
-  })
+  });
 
   socket.on('disconnect', () => {
     console.log('User Disconnected', socket.user.id);

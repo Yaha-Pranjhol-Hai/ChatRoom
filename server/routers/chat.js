@@ -22,6 +22,9 @@ router.post('/send', fetchuser, async (req, res) => {
         });
 
         const savedMessage = await newMessage.save();
+
+        io.to(roomExists).emit('newMessage', newMessage);
+
         res.json({ success: true, message: savedMessage});
 
     } catch (error) {

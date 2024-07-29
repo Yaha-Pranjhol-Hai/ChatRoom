@@ -87,6 +87,7 @@ router.post('/login', [
         const options = {
             httpOnly: true,
             secure: false,
+            sameSite: 'None'
         };
 
         const authtoken = jwt.sign(data, process.env.JWT_SECRET);
