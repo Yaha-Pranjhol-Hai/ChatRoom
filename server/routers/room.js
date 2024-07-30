@@ -1,7 +1,6 @@
 import fetchuser from "../middleware/fetchuser.js";
 import Room from '../models/room.model.js';
 import { Router } from "express";
-// import { io } from '../app.js';
 
 const router = Router();
 
@@ -10,11 +9,22 @@ router.post('/createroom', fetchuser, async (req, res) => {
     try {
     const { name, invitedUsers } = req.body;
     if (!name || !invitedUsers) {
+        console.log('Invalid data');
         return res.status(400).json({ success: false, error: "Invalid data" });
     }
-    const newRoom = new Room({ name, createdBy: req.user.id, invitedUsers });
-    const savedRoom = await newRoom.save();
-    res.json({ success: true, room: savedRoom });
+    let room = await Room.findOne({ name });
+        if (room) {
+        invitedUsers.forEach(user => {
+        if (!room.invitedUsers.includes(user)) {
+            room.invitedUsers.push(user);
+        }
+        });
+        room = await room.save();
+    } else {
+        room = new Room({ name, createdBy: req.user.id, invitedUsers });
+        room = await room.save();
+    }
+    res.json({ success: true, room });
     } catch (error) {
     console.error('Error creating room:', error.message);
     res.status(500).send("Internal Server Error");
