@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { io } from "socket.io-client";
+import { useSocket } from "../context/SocketProvider";
 
 function Login() {
-  // Initialize the state for email and password as empty strings
   const [credentials, setCredentials] = useState({ email: "", password: "" });
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [chats, setChats] = useState([]);
-  let navigate = useNavigate();
-  let socket;
+  const [rooms, setRooms] = useState([]);
+  const [availableRooms, setAvailableRooms] = useState([]);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const navigate = useNavigate();
+  const socket = useSocket();
 
+  // Handle login form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -22,76 +25,152 @@ function Login() {
       const json = response.data;
 
       if (json.success) {
-        setIsAuthenticated(true);
-        navigate("/");
-        console.log("Logged in Successfully", "success");
+        navigate("/"); // Redirect to home
+        console.log("Logged in Successfully");
+        fetchRooms(); // Fetch the rooms after logging in
+        fetchAvailableRooms(); // Fetch available rooms after logging in
       } else {
-        console.error("Invalid details", "danger");
+        console.error("Invalid details");
       }
     } catch (error) {
-      console.error(
-        "Login error:",
-        error.response ? error.response.data : error.message
-      );
+      console.error("Login error:", error.response ? error.response.data : error.message);
     }
   };
 
+  // Handle input changes for login
   const onChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  useEffect(() => {
-    if(isAuthenticated) {
-        socket =  io('http://localhost:3001', {
-            auth: {
-                token: document.cookie.split('=')[1]
-            }
+  // Fetch rooms the user is invited to
+  const fetchRooms = async () => {
+    try {
+      const response = await axios.get("http://localhost:3001/api/rooms", {
+        withCredentials: true
+      });
+      const json = response.data;
+      if (json.success) {
+        setRooms(json.rooms);
+      } else {
+        console.error("Failed to fetch rooms", json.error);
+      }
+    } catch (error) {
+      console.error("Failed to fetch rooms", error.response ? error.response.data : error.message);
+    }
+  };
+
+  // Fetch all available rooms
+  const fetchAvailableRooms = async () => {
+    try {
+      const response = await axios.get("http://localhost:3001/api/rooms/all", {
+        withCredentials: true
+      });
+      const json = response.data;
+      if (json.success) {
+        setAvailableRooms(json.rooms);
+      } else {
+        console.error("Failed to fetch available rooms", json.error);
+      }
+    } catch (error) {
+      console.error("Failed to fetch available rooms", error.response ? error.response.data : error.message);
+    }
+  };
+
+  // Fetch chats for the selected room
+  const fetchInitialChats = useCallback(async () => {
+    if (selectedRoomId) {
+      try {
+        const response = await axios.get(`http://localhost:3001/api/chat/room/${selectedRoomId}`, {
+          withCredentials: true
         });
-        socket.on('connect', () => {
-            console.log("Connected to server");
-
-            socket.emit('fetchChats', (response) => {
-                if(response.success) {
-                    setChats(response.chats);
-                }
-                else {
-                    console.error('Failed to fetch chats', response.error);
-                }
-            });
-        })
-
-        socket.on('newMessage', (chat) => {
-            setChats((prevChats) => [...prevChats, chat])
-        })
-
-        socket.on('disconnect', () => {
-            console.log("Disconnected from server");
-        })
-
-        return () => {
-            socket.disconnect();
+        const json = response.data;
+        if (json.success) {
+          setChats(json.messages);
+        } else {
+          console.error('Failed to fetch chats', json.error);
         }
+      } catch (error) {
+        console.error("Failed chats error", error.response ? error.response.data : error.message);
+      }
     }
-  }, [isAuthenticated]);
+  }, [selectedRoomId]);
 
-  const sendMessage = (message) => {
-    if(socket) {
-        socket.emit('sendMessage', message, (response) => {
-            if(!response.success) {
-                console.error('Failed to send message', response.error);
-            }
-        })
+  // Setup socket connection
+  useEffect(() => {
+    const authToken = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
+    if (authToken) {
+      socket.current = io('http://localhost:3001', {
+        auth: { token: authToken },
+        withCredentials: true,
+        transports: ['websocket']
+      });
+
+      socket.current.on('connect', () => {
+        console.log('Connected to server');
+      });
+
+      socket.current.on('newMessage', (chat) => {
+        setChats((prevChats) => [...prevChats, chat]);
+      });
+
+      socket.current.on('disconnect', () => {
+        console.log('Disconnected from server');
+      });
+
+      return () => {
+        socket.current.disconnect();
+      };
     }
-  }
+  }, [socket]);
+
+  // Join room and set up socket listeners
+  useEffect(() => {
+    if (selectedRoomId && socket) {
+      socket.emit('joinRoom', { roomId: selectedRoomId });
+
+      socket.on('roomJoined', (response) => {
+        if (!response.success) {
+          console.error('Failed to join room', response.error);
+        }
+      });
+
+      fetchInitialChats();
+    }
+  }, [selectedRoomId, fetchInitialChats, socket]);
+
+  const joinRoom = (roomId) => {
+    if (roomId && socket.current) {
+      socket.current.emit('joinRoom', { roomId });
+  
+      socket.current.on('roomJoined', (response) => {
+        if (response.success) {
+          console.log('Successfully joined the room');
+          fetchInitialChats(); // Fetch initial chats for the room
+        } else {
+          console.error('Failed to join room', response.error);
+        }
+      });
+    }
+  };
+  
+
+  // Send message
+  const sendMessage = (message) => {
+    if (socket.current) {
+      socket.current.emit('sendMessage', { message, roomId: selectedRoomId }, (response) => {
+        if (!response.success) {
+          console.error('Failed to send message', response.error);
+        }
+      });
+    }
+  };
 
   return (
     <div style={{ width: '50%', margin: 'auto', padding: '1rem' }}>
-      {!isAuthenticated ? (
+      {!document.cookie.split('; ').find(row => row.startsWith('authToken=')) ? (
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email address
-            </label>
+            <label htmlFor="email" className="form-label">Email address</label>
             <input
               type="email"
               value={credentials.email}
@@ -101,14 +180,10 @@ function Login() {
               name="email"
               aria-describedby="emailHelp"
             />
-            <div id="emailHelp" className="form-text">
-              We'll never share your email with anyone else.
-            </div>
+            <div id="emailHelp" className="form-text">We'll never share your email with anyone else.</div>
           </div>
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
+            <label htmlFor="password" className="form-label">Password</label>
             <input
               type="password"
               value={credentials.password}
@@ -118,28 +193,46 @@ function Login() {
               placeholder=""
             />
           </div>
-          <button type="submit" className="btn btn-primary">
-            Submit
-          </button>
+          <button type="submit" className="btn btn-primary">Submit</button>
         </form>
       ) : (
         <div>
-          <h2>Your Chats</h2>
+          <h2>Rooms You Are Invited To</h2>
           <ul>
-            {chats.map((chat) => (
-              <li key={chat._id}>{chat.message}</li>
+            {rooms.map((room) => (
+              <li key={room._id}>{room.name}</li>
             ))}
           </ul>
-          <input
-            type="text"
-            placeholder="Type your message..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                sendMessage(e.target.value);
-                e.target.value = '';
-              }
-            }}
-          />
+
+          <h2>All Available Rooms</h2>
+          <select onChange={(e) => setSelectedRoomId(e.target.value)}>
+            <option value="">Select a room</option>
+            {availableRooms.map((room) => (
+              <option key={room._id} value={room._id}>{room.name}</option>
+            ))}
+          </select>
+          <button onClick={() => joinRoom(selectedRoomId)}>Join Room</button>
+
+          {selectedRoomId && (
+            <div>
+              <h2>Your Chats</h2>
+              <ul>
+                {chats.map((chat) => (
+                  <li key={chat._id}>{chat.message}</li>
+                ))}
+              </ul>
+              <input
+                type="text"
+                placeholder="Type your message..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    sendMessage(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -9,6 +9,7 @@ import userRouter from './routers/auth.js';
 import chatRouter from './routers/chat.js';
 import roomRouter from './routers/room.js';
 import  dotenv from "dotenv";
+import fetchuser from "./middleware/fetchuser.js";
 
 dotenv.config({
   path: "./.env",
@@ -35,7 +36,7 @@ app.use(
   );
 
   io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
+    const token = socket.handshake.query.token;
     if (!token) {
       return next(new Error('Authentication error'));
     }
@@ -51,8 +52,20 @@ app.use(
 io.on('connection', (socket) => {
   console.log('A user connected', socket.user.id);
 
-  socket.on('joinroom', ({ roomId }) => {
+  socket.on('joinroom', async ({ roomId, userId }) => {
     socket.join(roomId);
+    socket.to(roomId).emit('userJoined', { userId });
+
+    const joinMessage = new Message({
+      user: userId,
+      message: "Joined the room.",
+      room: roomId
+  });
+  await joinMessage.save();
+  
+  const messages = await Message.find({ room: roomId }).populate('user', 'email');
+  socket.emit('initialMessages', messages);
+
     console.log(`${socket.user.id} joined room ${roomId}`);
   })
 
@@ -65,10 +78,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('sendMessage', async ({ message, roomId }) => {
+  socket.on('sendMessage', async ({ message, roomId, userId }) => {
     try {
       const newMessage = new Message({
-        user: socket.user.id,
+        user: userId,
         message,
         room: roomId
       });
@@ -87,8 +100,8 @@ io.on('connection', (socket) => {
 
 app.use(express.json());
 app.use('/api', userRouter);
-app.use('/api/rooms', roomRouter);
-app.use('/api/chats', chatRouter);
+app.use('/api/rooms', fetchuser, roomRouter);
+app.use('/api/chats', fetchuser, chatRouter);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

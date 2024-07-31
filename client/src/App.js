@@ -5,6 +5,7 @@ import Home from './Home';
 import Login from  './pages/Login'
 import Signup from './pages/Signup';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ChatPage from './components/Chat';
 
 const App = () => {
   return (
@@ -14,7 +15,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-
+        <Route path="/chat" element={<ChatPage/>} />
       </Routes>
     </Router>
   );
