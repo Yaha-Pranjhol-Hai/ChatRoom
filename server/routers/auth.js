@@ -41,6 +41,7 @@ router.post('/createuser', [
         const options = {
             httpOnly: true,
             secure: false,
+            sameSite: 'Lax'
         };
 
         const authtoken = jwt.sign(data, process.env.JWT_SECRET);
@@ -87,12 +88,12 @@ router.post('/login', [
         const options = {
             httpOnly: true,
             secure: false,
-            sameSite: 'None'
+            sameSite: 'Lax'
         };
 
         const authtoken = jwt.sign(data, process.env.JWT_SECRET);
         success = true,
-        res.cookie("authtoken", authtoken , options).json({success})
+        res.cookie("authToken", authtoken , options).json({success})
     } catch (error) {
         console.log(error.message);
         res.status(500).send("Internal server error")

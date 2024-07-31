@@ -1,7 +1,10 @@
+
+import mongoose from "mongoose";
 import fetchuser from "../middleware/fetchuser.js";
-import Room from '../models/room.model.js';
 import { Router } from "express";
 import User from "../models/user.model.js";
+import Room from '../models/room.model.js';
+import Message from "../models/message.model.js";
 
 const router = Router();
 
@@ -18,7 +21,8 @@ router.post('/createroom', fetchuser, async (req, res) => {
         }
 
         // Find users by their email addresses
-        const invitedUsers = await User.find({ email: { $in: invitedEmails } }, '_id');
+        // By specifying '_id', you're only retrieving the user IDs and not the entire user documents.
+        const invitedUsers = await User.find({ email: { $in: invitedEmails } }, '_id'); 
         const invitedUserIds = invitedUsers.map(user => user._id);
         // console.log('Invited Users:', invitedUserIds);
 
@@ -67,10 +71,13 @@ router.get('/all', fetchuser, async (req, res) => {
 });
 
 // Route to handle room join requests
-// Remember to change it in the Route invitedEmails to invitedEmails.
 router.post('/join/:roomId', fetchuser, async (req, res) => {
     const { roomId } = req.params;
     const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(roomId)) {
+        return res.status(400).json({ success: false, error: "Invalid room ID." });
+    }
 
     try {
         const room = await Room.findById(roomId);
@@ -79,13 +86,24 @@ router.post('/join/:roomId', fetchuser, async (req, res) => {
             return res.status(404).json({ success: false, error: "Room not found." });
         }
 
-        if (room.invitedEmails.includes(userId)) {
+        if (room.invitedUsers.includes(req.user.email)) {
             return res.status(400).json({ success: false, error: "You are already a member of this room." });
         }
 
         // Add user to the room
-        room.invitedEmails.push(userId);
+        room.invitedUsers.push(req.user.email);
         await room.save();
+
+        // io.to(roomId).emit('userJoined', { userId });
+
+        //Logging the join event.
+        const initialMessage = new Message({
+            user: userId,
+            message: "Joined the room",
+            room: room._id
+        });
+        await initialMessage.save();
+
 
         res.json({ success: true, room });
     } catch (error) {
