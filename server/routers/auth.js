@@ -39,7 +39,7 @@ router.post('/createuser', [
         }
 
         const options = {
-            httpOnly: true,
+            httpOnly: false,
             secure: false,
             sameSite: 'Lax'
         };
@@ -86,7 +86,7 @@ router.post('/login', [
         }
 
         const options = {
-            httpOnly: true,
+            httpOnly: false,
             secure: false,
             sameSite: 'Lax'
         };

@@ -9,6 +9,7 @@ function Login() {
   const [chats, setChats] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [availableRooms, setAvailableRooms] = useState([]);
+  const [authToken, setAuthToken] = useState(null);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const navigate = useNavigate();
   const socket = useSocket();
@@ -27,8 +28,11 @@ function Login() {
       if (json.success) {
         navigate("/"); // Redirect to home
         console.log("Logged in Successfully");
+        const authtoken = response.data.token;
+        setAuthToken(authtoken);
         fetchRooms(); // Fetch the rooms after logging in
         fetchAvailableRooms(); // Fetch available rooms after logging in
+        setupSocket(authtoken); // Set up the socket connection after logging in
       } else {
         console.error("Invalid details");
       }
@@ -95,40 +99,40 @@ function Login() {
     }
   }, [selectedRoomId]);
 
-  // Setup socket connection
-  useEffect(() => {
-    const authToken = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
-    if (authToken) {
-      socket.current = io('http://localhost:3001', {
-        auth: { token: authToken },
-        withCredentials: true,
-        transports: ['websocket']
-      });
+  // Set up socket connection
+  const setupSocket = (token) => {
+    console.log('Auth token', token);  // This is because we cant access the token from javascript in th console section of the browser. So this will be undefined.
+    const socketInstance = io('http://localhost:3001', {
+      auth: { token },
+      withCredentials: true,
+      transports: ['websocket']
+    });
 
-      socket.current.on('connect', () => {
-        console.log('Connected to server');
-      });
+    socketInstance.on('connect', () => {
+      console.log('Connected to server');
+    });
 
-      socket.current.on('newMessage', (chat) => {
-        setChats((prevChats) => [...prevChats, chat]);
-      });
+    socketInstance.on('newMessage', (chat) => {
+      setChats((prevChats) => [...prevChats, chat]);
+    });
 
-      socket.current.on('disconnect', () => {
-        console.log('Disconnected from server');
-      });
+    socketInstance.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
 
-      return () => {
-        socket.current.disconnect();
-      };
-    }
-  }, [socket]);
+    socket.current = socketInstance;
+
+    return () => {
+      socketInstance.disconnect();
+    };
+  };
 
   // Join room and set up socket listeners
   useEffect(() => {
-    if (selectedRoomId && socket) {
-      socket.emit('joinRoom', { roomId: selectedRoomId });
+    if (selectedRoomId && socket.current) {
+      socket.current.emit('joinRoom', { roomId: selectedRoomId });
 
-      socket.on('roomJoined', (response) => {
+      socket.current.on('roomJoined', (response) => {
         if (!response.success) {
           console.error('Failed to join room', response.error);
         }
@@ -136,7 +140,7 @@ function Login() {
 
       fetchInitialChats();
     }
-  }, [selectedRoomId, fetchInitialChats, socket]);
+  }, [socket, selectedRoomId, fetchInitialChats]);
 
   const joinRoom = (roomId) => {
     if (roomId && socket.current) {
@@ -152,7 +156,6 @@ function Login() {
       });
     }
   };
-  
 
   // Send message
   const sendMessage = (message) => {
@@ -167,7 +170,7 @@ function Login() {
 
   return (
     <div style={{ width: '50%', margin: 'auto', padding: '1rem' }}>
-      {!document.cookie.split('; ').find(row => row.startsWith('authToken=')) ? (
+      {!authToken ? (
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label htmlFor="email" className="form-label">Email address</label>

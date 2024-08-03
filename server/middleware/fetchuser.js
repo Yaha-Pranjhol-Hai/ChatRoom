@@ -5,7 +5,7 @@ const fetchuser = async (req, res, next) => {
     // Extract token from Authorization header or cookies
     const token = req.header('Authorization')?.replace('Bearer ', '') || req.cookies.authToken;
 
-    console.log('Token:', token);
+    // console.log('Token:', token);
 
     if (!token) {
         console.error('No token provided');
@@ -27,7 +27,7 @@ const fetchuser = async (req, res, next) => {
 
         // Set the user in the request object
         req.user = data.user;
-        console.log('Authenticated User:', req.user);
+        // console.log('Authenticated User:', req.user);
         next();
     } catch (error) {
         console.error('Authentication Error:', error);

@@ -3,12 +3,13 @@ import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 import cookieParser from "cookie-parser";
+import cookie from "cookie";
 import Message from "./models/message.model.js";
 import jwt from "jsonwebtoken";
 import userRouter from './routers/auth.js';
 import chatRouter from './routers/chat.js';
 import roomRouter from './routers/room.js';
-import  dotenv from "dotenv";
+import dotenv from "dotenv";
 import fetchuser from "./middleware/fetchuser.js";
 
 dotenv.config({
@@ -33,21 +34,26 @@ app.use(
       origin:  process.env.CORS_ORIGIN || 'http://localhost:3000',
       credentials: true,
     })
-  );
+);
 
-  io.use((socket, next) => {
-    const token = socket.handshake.query.token;
-    if (!token) {
+io.use((socket, next) => {
+  const cookies = cookie.parse(socket.handshake.headers.cookie || ''); // Parse cookies
+  const token = cookies.authToken; // Access authToken
+  
+  // console.log(socket.handshake);
+  // console.log('authToken:', token);
+
+  if (!token) {
+    return next(new Error('Authentication error'));
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
       return next(new Error('Authentication error'));
     }
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (err) {
-        return next(new Error('Authentication error'));
-      }
-      socket.user = user.user;
-      next();
-    });
+    socket.user = user.user;
+    next();
   });
+});
 
 io.on('connection', (socket) => {
   console.log('A user connected', socket.user.id);
@@ -60,11 +66,11 @@ io.on('connection', (socket) => {
       user: userId,
       message: "Joined the room.",
       room: roomId
-  });
-  await joinMessage.save();
+    });
+    await joinMessage.save();
   
-  const messages = await Message.find({ room: roomId }).populate('user', 'email');
-  socket.emit('initialMessages', messages);
+    const messages = await Message.find({ room: roomId }).populate('user', 'email');
+    socket.emit('initialMessages', messages);
 
     console.log(`${socket.user.id} joined room ${roomId}`);
   })
@@ -98,7 +104,6 @@ io.on('connection', (socket) => {
   })
 })
 
-app.use(express.json());
 app.use('/api', userRouter);
 app.use('/api/rooms', fetchuser, roomRouter);
 app.use('/api/chats', fetchuser, chatRouter);
