@@ -1,16 +1,16 @@
-import connectToMongo from './db/index.js';
+import connectToMongo from './db/db.js';
 import dotenv from 'dotenv';
-import app from './app.js'; // Import the app without starting the server
+import server from './app.js';
 
 dotenv.config({
   path: "./.env",
 });
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3001;
 
 connectToMongo()
   .then(() => {
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })

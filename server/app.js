@@ -14,34 +14,30 @@ import fetchuser from "./middleware/fetchuser.js";
 
 dotenv.config({
   path: "./.env",
-})
+});
 
 const app = express();
 const server = http.createServer(app);
-app.use(express.json());
-app.use(cookieParser());
-
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN ||"http://localhost:3000",
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
+app.use(express.json());
+app.use(cookieParser());
 app.use(
-    cors({
-      origin:  process.env.CORS_ORIGIN || 'http://localhost:3000',
-      credentials: true,
-    })
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  })
 );
 
 io.use((socket, next) => {
   const cookies = cookie.parse(socket.handshake.headers.cookie || ''); // Parse cookies
   const token = cookies.authToken; // Access authToken
-  
-  // console.log(socket.handshake);
-  // console.log('authToken:', token);
 
   if (!token) {
     return next(new Error('Authentication error'));
@@ -73,14 +69,14 @@ io.on('connection', (socket) => {
     socket.emit('initialMessages', messages);
 
     console.log(`${socket.user.id} joined room ${roomId}`);
-  })
+  });
 
   socket.on('fetchChats', async (callback) => {
     try {
-      const chats = await Message.find({ user: socket.user.id});
-      callback({ success: true, chats});
+      const chats = await Message.find({ user: socket.user.id });
+      callback({ success: true, chats });
     } catch (error) {
-      callback({ success: false, error: error.message})
+      callback({ success: false, error: error.message });
     }
   });
 
@@ -101,15 +97,11 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User Disconnected', socket.user.id);
-  })
-})
+  });
+});
 
 app.use('/api', userRouter);
 app.use('/api/rooms', fetchuser, roomRouter);
 app.use('/api/chats', fetchuser, chatRouter);
 
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-export default app;
-
+export default server;
