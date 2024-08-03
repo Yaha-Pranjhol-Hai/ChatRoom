@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
-import { io } from "socket.io-client";
 
 function ChatPage() {
   const [chats, setChats] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [selectedRoomId, setSelectedRoomId] = useState(""); // Default to empty string
   const socket = useRef(null);
 
   const fetchRooms = async () => {
@@ -39,38 +38,9 @@ function ChatPage() {
   }, [selectedRoomId]);
 
   useEffect(() => {
-    fetchInitialChats();
-  }, [selectedRoomId, fetchInitialChats]);
-
-    // Initialize socket connection.
-  useEffect(() => {
-    const authToken = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
-    if (authToken) {
-      socket.current = io('http://localhost:3001', {
-        auth: { token: authToken },
-        withCredentials: true,
-        transports: ['websocket']
-      });
-
-      socket.current.on('connect', () => {
-        console.log('Connected to server');
-      });
-
-      socket.current.on('newMessage', (chat) => {
-        setChats((prevChats) => [...prevChats, chat]);
-      });
-
-      socket.current.on('disconnect', () => {
-        console.log('Disconnected from server');
-      });
-
-      return () => {
-        socket.current.disconnect();
-      };
-    }
+    fetchRooms();
   }, []);
 
-  //Handle room selection and fetch initial chats.
   useEffect(() => {
     if (selectedRoomId && socket.current) {
       socket.current.emit('joinRoom', { roomId: selectedRoomId });
@@ -84,11 +54,6 @@ function ChatPage() {
       fetchInitialChats();
     }
   }, [selectedRoomId, fetchInitialChats]);
-
-  // Fetch rooms on component mount
-  useEffect(() => {
-    fetchRooms();
-  }, []);
 
   const sendMessage = (message) => {
     if (socket.current) {
@@ -107,7 +72,7 @@ function ChatPage() {
   return (
     <div>
       <h2>Chat Page</h2>
-      <select onChange={handleRoomChange}>
+      <select value={selectedRoomId} onChange={handleRoomChange}>
         <option value="">Select a Room</option>
         {rooms.map((room) => (
           <option key={room._id} value={room._id}>{room.name}</option>
