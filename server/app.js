@@ -6,11 +6,12 @@ import cookieParser from "cookie-parser";
 import cookie from "cookie";
 import Message from "./models/message.model.js";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import fetchuser from "./middleware/fetchuser.js";
 import userRouter from './routers/auth.js';
 import chatRouter from './routers/chat.js';
 import roomRouter from './routers/room.js';
-import dotenv from "dotenv";
-import fetchuser from "./middleware/fetchuser.js";
+import validateTokenRouter from './routers/validatetoken.js';
 
 dotenv.config({
   path: "./.env",
@@ -38,6 +39,8 @@ app.use(
 io.use((socket, next) => {
   const cookies = cookie.parse(socket.handshake.headers.cookie || ''); // Parse cookies
   const token = cookies.authToken; // Access authToken
+
+  // console.log(socket.handshake);
 
   if (!token) {
     return next(new Error('Authentication error'));
@@ -101,6 +104,7 @@ io.on('connection', (socket) => {
 });
 
 app.use('/api', userRouter);
+app.use('/api', validateTokenRouter);
 app.use('/api/rooms', fetchuser, roomRouter);
 app.use('/api/chats', fetchuser, chatRouter);
 

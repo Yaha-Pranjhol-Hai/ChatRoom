@@ -24,7 +24,7 @@ function Login() {
       if (json.success) {
         const authtoken = response.data.token;
         setAuthToken(authtoken);
-        setupSocket(authtoken);
+        setupSocket();
         navigate("/chat"); // Navigate to ChatPage
       } else {
         console.error("Invalid details");
@@ -42,7 +42,6 @@ function Login() {
   // Set up socket connection
   const setupSocket = (token) => {
     const socketInstance = io('http://localhost:3001', {
-      auth: { token },
       withCredentials: true,
       transports: ['websocket']
     });

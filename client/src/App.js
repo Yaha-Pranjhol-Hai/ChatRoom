@@ -1,11 +1,12 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Home from './Home';
-import Login from  './pages/Login'
-import Signup from './pages/Signup';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import ChatPage from './components/Chat';
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
+import ChatPage from "./components/Chat";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const App = () => {
   return (
@@ -15,10 +16,17 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/chat" element={<ChatPage/>} />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;
