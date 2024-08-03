@@ -25,7 +25,7 @@ function Login() {
         const authtoken = response.data.token;
         setAuthToken(authtoken);
         setupSocket();
-        navigate("/chat"); // Navigate to ChatPage
+        navigate("/dashboard");
       } else {
         console.error("Invalid details");
       }

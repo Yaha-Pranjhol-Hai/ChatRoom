@@ -4,8 +4,8 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
-import ChatPage from "./components/Chat";
-import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const App = () => {
@@ -17,10 +17,10 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route
-          path="/chat"
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <ChatPage />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
