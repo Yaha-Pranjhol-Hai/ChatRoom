@@ -41,7 +41,7 @@ const RegistrationForm = () => {
   };
 
   return (
-    <div style={{ width: "50%", margin: "auto", padding: "1rem" }}>
+    <div style={{ width: "70%", margin: "auto", padding: "1rem" }}>
       <h2>Create Room and Send Invites</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">

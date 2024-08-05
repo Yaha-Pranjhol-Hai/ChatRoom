@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
 
   socket.on('joinroom', async ({ roomId, userId }) => {
     socket.join(roomId);
-    socket.to(roomId).emit('userJoined', { userId });
+    io.to(roomId).emit('userJoined', { userId });
 
     const joinMessage = new Message({
       user: userId,

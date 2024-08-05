@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useSocket } from "../context/SocketProvider";
-import { io } from "socket.io-client";
+import Cookies from 'js-cookie';
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
-  const [authToken, setAuthToken] = useState(null);
   const navigate = useNavigate();
-  const socket = useSocket();
+  const { login } = useAuth();
 
   // Handle login form submission
   const handleSubmit = async (e) => {
@@ -19,12 +18,11 @@ function Login() {
         { email: credentials.email, password: credentials.password },
         { withCredentials: true }
       );
-      const json = response.data;
+      const { success, token } = response.data;
 
-      if (json.success) {
-        const authtoken = response.data.token;
-        setAuthToken(authtoken);
-        setupSocket();
+      if (success) {
+        Cookies.set('authtoken', token)
+        login();
         navigate("/dashboard");
       } else {
         console.error("Invalid details");
@@ -39,31 +37,9 @@ function Login() {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  // Set up socket connection
-  const setupSocket = (token) => {
-    const socketInstance = io('http://localhost:3001', {
-      withCredentials: true,
-      transports: ['websocket']
-    });
-
-    socketInstance.on('connect', () => {
-      console.log('Connected to server');
-    });
-
-    socketInstance.on('disconnect', () => {
-      console.log('Disconnected from server');
-    });
-
-    socket.current = socketInstance;
-
-    return () => {
-      socketInstance.disconnect();
-    };
-  };
 
   return (
     <div style={{ width: '50%', margin: 'auto', padding: '1rem' }}>
-      {!authToken ? (
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label htmlFor="email" className="form-label">Email address</label>
@@ -90,9 +66,6 @@ function Login() {
           </div>
           <button type="submit" className="btn btn-primary">Submit</button>
         </form>
-      ) : (
-        <div>Loading...</div>
-      )}
     </div>
   );
 }

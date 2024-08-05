@@ -59,16 +59,25 @@ router.get('/', fetchuser, async (req, res) => {
     }
 })
 
-// Route to fetch all available rooms
-router.get('/all', fetchuser, async (req, res) => {
+router.get('/userrooms', fetchuser, async (req,res) => {
     try {
-        const rooms = await Room.find().populate('createdBy', 'name email');
-        res.json({ success: true, rooms });
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+
+        if(!user) {
+            return res.status(404).json({success: false, error: 'User not Found'});
+        }
+
+        const rooms = await Room.find({
+            $or: [{ createdBy: userId}, { invitedUsers: userId}]
+        });
+
+        res.json({ success: true, rooms});
     } catch (error) {
-        console.error(error.message);
-        res.status(500).send("Internal Server Error.");
+        console.error('Error fetching rooms: ', error.message);
+        res.status(500).send('Internal server error.')
     }
-});
+})
 
 // Route to handle room join requests
 router.post('/join/:roomId', fetchuser, async (req, res) => {

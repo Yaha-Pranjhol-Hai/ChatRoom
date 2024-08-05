@@ -113,4 +113,14 @@ router.post('/getuser', fetchuser, async (req,res) => {
     }
 } )
 
+router.post('/logout', (req,res) => {
+    try {
+        res.clearCookie('authToken');
+        res.json({success: true});
+    } catch (error) {
+        console.error('Logout Error: ', error);
+        res.status(500).json({ success: false, message: "Logout Failed"});
+    }
+})
+
 export default router;

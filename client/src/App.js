@@ -6,11 +6,13 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const App = () => {
   return (
     <Router>
+      <AuthProvider>
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -25,6 +27,7 @@ const App = () => {
           }
         />
       </Routes>
+      </AuthProvider>
     </Router>
   );
 };
