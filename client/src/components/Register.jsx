@@ -22,14 +22,14 @@ const RegistrationForm = () => {
 
     try {
       const response = await axios.post("http://localhost:3001/api/rooms/createroom", {
-        roomName,
-        inviteEmails: inviteEmails.split(",").map(email => email.trim()),
+        name: roomName,
+        invitedEmails: inviteEmails.split(",").map(email => email.trim()), // Change this to 'invitedEmails'
       }, { withCredentials: true });
 
       if (response.data.success) {
         alert("Room created and invites sent successfully.");
         setRoomName("");
-        setInviteEmails(""); // They both clear the form so that if the user may want to create a new room.
+        setInviteEmails(""); // Clear the form
       } else {
         setError("Failed to create room or send invites.");
       }
