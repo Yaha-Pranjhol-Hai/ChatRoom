@@ -18,10 +18,8 @@ function Login() {
         { email: credentials.email, password: credentials.password },
         { withCredentials: true }
       );
-      const { success, token } = response.data;
 
-      if (success) {
-        Cookies.set('authtoken', token)
+      if (response.data.success) {
         login();
         navigate("/dashboard");
       } else {

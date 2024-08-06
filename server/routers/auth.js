@@ -44,9 +44,9 @@ router.post('/createuser', [
             sameSite: 'Lax'
         };
 
-        const authtoken = jwt.sign(data, process.env.JWT_SECRET);
+        const authToken = jwt.sign(data, process.env.JWT_SECRET);
         success = true;
-        res.cookie("authToken", authtoken, options).json({success})
+        res.cookie("authToken", authToken, options).json({success})
 
     } catch (error) {
         console.error(error.message);
@@ -91,9 +91,9 @@ router.post('/login', [
             sameSite: 'Lax'
         };
 
-        const authtoken = jwt.sign(data, process.env.JWT_SECRET);
+        const authToken = jwt.sign(data, process.env.JWT_SECRET);
         success = true,
-        res.cookie("authToken", authtoken , options).json({success})
+        res.cookie("authToken", authToken , options).json({success})
     } catch (error) {
         console.log(error.message);
         res.status(500).send("Internal server error")
@@ -115,7 +115,11 @@ router.post('/getuser', fetchuser, async (req,res) => {
 
 router.post('/logout', (req,res) => {
     try {
-        res.clearCookie('authToken');
+        res.clearCookie('authToken', {
+            httpOnly: false,
+            secure: false,
+            sameSite: "Lax"
+        });
         res.json({success: true});
     } catch (error) {
         console.error('Logout Error: ', error);
