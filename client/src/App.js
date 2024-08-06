@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
+import ChatRoom from "./components/ChatRoom";
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/chatroom/:roomId" element={<ChatRoom />} />
       </Routes>
       </AuthProvider>
     </Router>

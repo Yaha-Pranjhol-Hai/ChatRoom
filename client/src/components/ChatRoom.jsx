@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import io from "socket.io-client";
+import { useParams } from "react-router-dom";
 
-const ChatRoom = ({ roomId, userId }) => {
+const ChatRoom = () => {
+  const { roomId } = useParams(); // Extract roomId from URL
   const [chats, setChats] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [newUser, setNewUser] = useState("");
   const socket = useRef(null);
+  const userId = "some-user-id"; // Replace with actual userId or pass it as a prop if needed
 
   useEffect(() => {
     socket.current = io("http://localhost:3001");

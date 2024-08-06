@@ -1,15 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import ChatPage from "../components/ChatPage";
 import RegistrationForm from "../components/Register";
-import ChatRoom from "../components/ChatRoom";
 
-const Dashboard = ({ userId }) => {
-  const [selectedRoomId, setSelectedRoomId] = useState("");
-
-  const handleRoomSelect = (roomId) => {
-    setSelectedRoomId(roomId);
-  };
-
+const Dashboard = () => {
   return (
     <div className="container" style={{ display: "flex", paddingTop: "20px", justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
       <h2>Dashboard</h2>
@@ -18,11 +11,7 @@ const Dashboard = ({ userId }) => {
           <RegistrationForm />
         </div>
         <div>
-          {selectedRoomId ? (
-            <ChatRoom roomId={selectedRoomId} userId={userId} />
-          ) : (
-            <ChatPage onRoomSelect={handleRoomSelect} />
-          )}
+          <ChatPage />
         </div>
       </div>
     </div>
