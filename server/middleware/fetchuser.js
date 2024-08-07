@@ -8,7 +8,7 @@ const fetchuser = async (req, res, next) => {
     // console.log('Token:', token);
 
     if (!token) {
-        console.error('No token provided');
+        console.error('No token provided.....');
         return res.status(401).json({ error: "Please authenticate using a valid Token...." });
     }
 
@@ -27,7 +27,7 @@ const fetchuser = async (req, res, next) => {
 
         // Set the user in the request object
         req.user = data.user;
-        // console.log('Authenticated User:', req.user);
+        console.log('Authenticated User:', req.user);
         next();
     } catch (error) {
         console.error('Authentication Error:', error);

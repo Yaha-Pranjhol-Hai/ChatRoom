@@ -1,27 +1,33 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import io from "socket.io-client";
 import { useParams } from "react-router-dom";
+import { useSocket } from "../../context/SocketProvider";
+import { useUser } from "../../context/UserContext";
+import "./ChatRoom.css";
 
 const ChatRoom = () => {
-  const { roomId } = useParams(); // Extract roomId from URL
+  const { roomId } = useParams();
   const [chats, setChats] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [newUser, setNewUser] = useState("");
-  const socket = useRef(null);
-  const userId = "some-user-id"; // Replace with actual userId or pass it as a prop if needed
+  const socket = useSocket();
+  const chatEndRef = useRef(null);
+  const { user, loading } = useUser();
 
   useEffect(() => {
-    socket.current = io("http://localhost:3001");
-    socket.current.emit("joinRoom", { roomId, userId });
+    if (loading || !socket || !user) return;
 
-    socket.current.on("userJoined", ({ userId }) => {
-      setNewUser(userId);
-      console.log(`User ${userId} joined room ${roomId}`);
+    const userId = user._id;
+
+    socket.emit("joinRoom", { roomId, userId });
+
+    socket.on("newMessage", (message) => {
+      setChats((prevChats) => [...prevChats, message]);
     });
 
-    socket.current.on("receiveMessage", (message) => {
-      setChats((prevChats) => [...prevChats, message]);
+    socket.on("userJoined", ({ userId }) => {
+      setNewUser(userId);
+      console.log(`User ${userId} joined room ${roomId}`);
     });
 
     const fetchChats = async () => {
@@ -46,13 +52,15 @@ const ChatRoom = () => {
     fetchChats();
 
     return () => {
-      socket.current.disconnect();
+      socket.off("newMessage");
+      socket.off("userJoined");
     };
-  }, [roomId, userId]);
+  }, [roomId, user, loading, socket]);
 
   const sendMessage = () => {
-    if (socket.current && newMessage.trim() !== "") {
-      socket.current.emit(
+    if (socket && newMessage.trim() !== "" && user) {
+      const userId = user._id;
+      socket.emit(
         "sendMessage",
         { message: newMessage, roomId, userId },
         (response) => {
@@ -60,24 +68,37 @@ const ChatRoom = () => {
             console.error("Failed to send message", response.error);
           } else {
             setNewMessage("");
+            console.log(newMessage);
           }
         }
       );
     }
   };
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chats]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div style={{ width: "100%", margin: "auto", padding: "1rem" }}>
+    <div className="chat-room">
       <h2>Chat Room</h2>
       {newUser && <div>New user joined: {newUser}</div>}
-      <div>
+      <div className="chat-messages">
         {chats.map((chat, index) => (
-          <div key={index}>
+          <div
+            key={index}
+            className={`chat-message ${chat.user._id === user?._id ? "user-message" : "other-message"}`}
+          >
             <strong>{chat.user.email}</strong>: {chat.message}
           </div>
         ))}
+        <div ref={chatEndRef} />
       </div>
-      <div style={{ display: "flex", alignItems: "center", marginTop: "1rem" }}>
+      <div className="chat-input">
         <input
           type="text"
           value={newMessage}
@@ -87,7 +108,6 @@ const ChatRoom = () => {
         <button
           onClick={sendMessage}
           className="btn btn-primary"
-          style={{ marginLeft: "1rem" }}
         >
           Send
         </button>

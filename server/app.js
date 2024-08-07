@@ -55,9 +55,10 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-  console.log('A user connected', socket.user.id);
+  console.log(`User connected: ${socket.id} - User ID: ${socket.user.id}`);
 
-  socket.on('joinroom', async ({ roomId, userId }) => {
+  socket.on('joinRoom', async ({ roomId, userId }) => {
+    console.log(`Socket ID: ${socket.id} joining room: ${roomId} for user ID: ${userId}`);
     socket.join(roomId);
     io.to(roomId).emit('userJoined', { userId });
 
@@ -83,18 +84,19 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('sendMessage', async ({ message, roomId, userId }) => {
+  socket.on('sendMessage', async ({ message, roomId, userId }, callback) => {
     try {
       const newMessage = new Message({
         user: userId,
         message,
-        room: roomId
+        room: roomId,
       });
-      const savedMessage = await newMessage.save();
-      io.to(roomId).emit('newMessage', savedMessage);
+      await newMessage.save();
+      io.to(roomId).emit('newMessage', newMessage);
+      callback({ success: true });
     } catch (error) {
-      console.error('Error sending message:', error);
-      socket.emit('sendMessage', { success: false, error: error.message });
+      console.error('Failed to send message:', error);
+      callback({ success: false, error: error.message });
     }
   });
 

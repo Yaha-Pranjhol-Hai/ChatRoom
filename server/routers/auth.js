@@ -7,7 +7,7 @@ import fetchuser from "../middleware/fetchuser.js";
 
 const router = Router();
 
-// Route 1 on http://localhost:5000/api/createuser
+// Route 1 on http://localhost:3000/api/createuser
 router.post('/createuser', [
     body('name', 'Enter a valid name').isLength({ min: 3 }),
     body('email', 'Enter a valid email').isEmail(),
@@ -54,7 +54,7 @@ router.post('/createuser', [
     }
 })
 
-// Route 2 on http://localhost:5000/api/login
+// Route 2 on http://localhost:3000/api/login
 router.post('/login', [
     body('email', 'Enter a valid email').isEmail(),
     body('password', 'Password cannot be blank').exists(),
@@ -100,7 +100,7 @@ router.post('/login', [
     }
 })
 
-// Route 3 Authnticate a User on http://localhost:5000/api/getuser. Login required.
+// Route 3 Authenticate a User on http://localhost:3000/api/getuser. Login required.
 router.post('/getuser', fetchuser, async (req,res) => {
     try {
         const userId = req.user.id;

@@ -8,11 +8,15 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
-import ChatRoom from "./components/ChatRoom";
+import ChatRoom from "./components/ChatRoom/ChatRoom";
+import { SocketProvider } from "./context/SocketProvider";
+import { UserProvider } from "./context/UserContext";
 
 const App = () => {
   return (
     <Router>
+      <UserProvider>
+      <SocketProvider>
       <AuthProvider>
       <Navbar />
       <Routes>
@@ -30,6 +34,8 @@ const App = () => {
         <Route path="/chatroom/:roomId" element={<ChatRoom />} />
       </Routes>
       </AuthProvider>
+      </SocketProvider>
+      </UserProvider>
     </Router>
   );
 };

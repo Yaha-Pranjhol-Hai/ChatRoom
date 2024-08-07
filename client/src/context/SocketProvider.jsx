@@ -4,11 +4,10 @@ import { io } from "socket.io-client";
 const SocketContext = createContext(null);
 
 export const useSocket = () => {
-    const socket = useContext(SocketContext);
-    return socket;
-}
+    return useContext(SocketContext);
+};
 
-export const SocketProvider = (props) => {
+export const SocketProvider = ({ children }) => {
     const socket = useMemo(() => io("http://localhost:3001", {
         transports: ['websocket'], // Ensure you only use the websocket transport
         withCredentials: true, // Send cookies with the request
@@ -16,7 +15,7 @@ export const SocketProvider = (props) => {
 
     return (
         <SocketContext.Provider value={socket}>
-            {props.children}
+            {children}
         </SocketContext.Provider>
-    )
-}
+    );
+};
