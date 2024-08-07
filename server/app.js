@@ -4,6 +4,7 @@ import http from "http";
 import { Server } from "socket.io";
 import cookieParser from "cookie-parser";
 import cookie from "cookie";
+import User from "./models/user.model.js";
 import Message from "./models/message.model.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -40,8 +41,6 @@ io.use((socket, next) => {
   const cookies = cookie.parse(socket.handshake.headers.cookie || ''); // Parse cookies
   const token = cookies.authToken; // Access authToken
 
-  // console.log(socket.handshake);
-
   if (!token) {
     return next(new Error('Authentication error'));
   }
@@ -55,24 +54,27 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id} - User ID: ${socket.user.id}`);
 
   socket.on('joinRoom', async ({ roomId, userId }) => {
-    console.log(`Socket ID: ${socket.id} joining room: ${roomId} for user ID: ${userId}`);
-    socket.join(roomId);
-    io.to(roomId).emit('userJoined', { userId });
+    const rooms = Array.from(socket.rooms);
+    if (!rooms.includes(roomId)) {
+      console.log(`Socket ID: ${socket.id} joining room: ${roomId} for user ID: ${userId}`);
+      socket.join(roomId);
+      const user = await User.findById(userId);
+      io.to(roomId).emit('userJoined', { userId, name: user.name });
 
-    const joinMessage = new Message({
-      user: userId,
-      message: "Joined the room.",
-      room: roomId
-    });
-    await joinMessage.save();
-  
-    const messages = await Message.find({ room: roomId }).populate('user', 'email');
-    socket.emit('initialMessages', messages);
+      const joinMessage = new Message({
+        user: userId,
+        message: "Joined the room.",
+        room: roomId
+      });
+      await joinMessage.save();
+      
+      const messages = await Message.find({ room: roomId }).populate('user', 'email name');
+      socket.emit('initialMessages', messages);
 
-    console.log(`${socket.user.id} joined room ${roomId}`);
+      console.log(`${userId} joined room ${roomId}`);
+    }
   });
 
   socket.on('fetchChats', async (callback) => {
@@ -85,6 +87,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sendMessage', async ({ message, roomId, userId }, callback) => {
+    console.log(`Received sendMessage event for room ${roomId} from user ${userId}`);
     try {
       const newMessage = new Message({
         user: userId,
@@ -92,7 +95,8 @@ io.on('connection', (socket) => {
         room: roomId,
       });
       await newMessage.save();
-      io.to(roomId).emit('newMessage', newMessage);
+      const populatedMessage = await newMessage.populate('user', 'email name');
+      io.to(roomId).emit('newMessage', populatedMessage);
       callback({ success: true });
     } catch (error) {
       console.error('Failed to send message:', error);

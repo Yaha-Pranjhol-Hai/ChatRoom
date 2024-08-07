@@ -9,15 +9,15 @@ const ChatRoom = () => {
   const { roomId } = useParams();
   const [chats, setChats] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [newUser, setNewUser] = useState("");
+  const [joinedUsers, setJoinedUsers] = useState([]);
   const socket = useSocket();
   const chatEndRef = useRef(null);
   const { user, loading } = useUser();
 
   useEffect(() => {
     if (loading || !socket || !user) return;
-
     const userId = user._id;
+    console.log(`UseEffect: Emitting joinRoom event for user ${userId} to room ${roomId}`);
 
     socket.emit("joinRoom", { roomId, userId });
 
@@ -25,9 +25,9 @@ const ChatRoom = () => {
       setChats((prevChats) => [...prevChats, message]);
     });
 
-    socket.on("userJoined", ({ userId }) => {
-      setNewUser(userId);
-      console.log(`User ${userId} joined room ${roomId}`);
+    socket.on("userJoined", ({ userId, name }) => {
+      setJoinedUsers((prevUsers) => [...prevUsers, { userId, name }]);
+      console.log(`User ${name} joined room ${roomId}`);
     });
 
     const fetchChats = async () => {
@@ -86,14 +86,13 @@ const ChatRoom = () => {
   return (
     <div className="chat-room">
       <h2>Chat Room</h2>
-      {newUser && <div>New user joined: {newUser}</div>}
       <div className="chat-messages">
         {chats.map((chat, index) => (
           <div
             key={index}
             className={`chat-message ${chat.user._id === user?._id ? "user-message" : "other-message"}`}
           >
-            <strong>{chat.user.email}</strong>: {chat.message}
+            <strong>{chat.user._id === user?._id ? "You" : chat.user.name}</strong>: {chat.message}
           </div>
         ))}
         <div ref={chatEndRef} />
