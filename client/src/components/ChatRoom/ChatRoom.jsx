@@ -26,10 +26,15 @@ const ChatRoom = () => {
     });
 
     socket.on("userJoined", ({ userId, name }) => {
-      setJoinedUsers((prevUsers) => [...prevUsers, { userId, name }]);
+      setJoinedUsers((prevUsers) => {
+        if (!prevUsers.some(user => user.userId === userId)) {
+          return [...prevUsers, { userId, name }];
+        }
+        return prevUsers;
+      });
       console.log(`User ${name} joined room ${roomId}`);
     });
-
+    
     const fetchChats = async () => {
       try {
         const response = await axios.get(
@@ -86,13 +91,23 @@ const ChatRoom = () => {
   return (
     <div className="chat-room">
       <h2>Chat Room</h2>
+
+      <div className="chat-users">
+        <h4>Users in this room:</h4>
+        <ul>
+          {joinedUsers.map((user) => (
+            <li key={user.userId}>{user.name}</li>
+          ))}
+        </ul>
+      </div>
+
       <div className="chat-messages">
         {chats.map((chat, index) => (
           <div
             key={index}
             className={`chat-message ${chat.user._id === user?._id ? "user-message" : "other-message"}`}
           >
-            <strong>{chat.user._id === user?._id ? "You" : chat.user.name}</strong>: {chat.message}
+            <strong>{chat.user.name}</strong>: {chat.message}
           </div>
         ))}
         <div ref={chatEndRef} />

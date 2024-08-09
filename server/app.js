@@ -60,8 +60,8 @@ io.on('connection', (socket) => {
     if (!rooms.includes(roomId)) {
       console.log(`Socket ID: ${socket.id} joining room: ${roomId} for user ID: ${userId}`);
       socket.join(roomId);
-      const user = await User.findById(userId);
-      io.to(roomId).emit('userJoined', { userId, name: user.name });
+      const user = await User.findById(socket.user.id);
+      io.to(roomId).emit('userJoined', { userId: socket.user.id, name: user.name });
 
       const joinMessage = new Message({
         user: userId,
